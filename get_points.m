@@ -14,7 +14,38 @@ px = pt_idx(2);
 % need a try/catch here for the boundary points
 % points on the boundary still get a [kernel size] kernel, so if y == 1
 % then this will throw an exception
-pts = array(py-kdy:py+kdy, px-kdx:px+kdx,:); 
+
+% figure out if we're boundary or not
+left = false;
+right = false;
+top = false;
+bottom = false;
+
+% need to add in error checking for the kernel here
+if py == 1
+  top = true;
+  ypts = py:py+kdy;
+  k1 = k1(1+kdy:end, :);
+elseif py == size(array, 1)
+  bottom = true;
+  ypts = py-kdy:py;
+  k1 = k1(1:1+kdy, :);
+else
+  ypts = py-kdy:py+kdy;
+end
+if px == 1
+  left = true;
+  xpts = px:px+kdy;
+  k1 = k1(:, 1+kdy:end);
+elseif px == size(array, 2)
+  right = true;
+  xpts = px-kdx:px;
+  k1 = k1(:, 1:1+kdy);
+else
+  xpts = px-kdx:px+kdx;
+end
+
+pts = array(ypts, xpts, :);
 k2 = repmat(k1, [1, 1, size(array, 3)]);
 
 out = pts(k2);

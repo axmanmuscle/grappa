@@ -8,7 +8,7 @@ d1 = squeeze(d);
 %out = minismash_x(d1);
 kernel_sz = [3 3];
 acr_sz = [5 5];
-reduction = 2;
+reduction = 3;
 
 sm = grappa_samplingmask(size(d1), acr_sz, reduction);
 
@@ -28,6 +28,7 @@ b = 1;
 r_truth = mri_reconSSQ(squeeze(d));
 r_under = mri_reconSSQ(d1);
 r_recon = mri_reconSSQ(out);
+r_recon2 = mri_reconSSQ(out_2);
 
 figure; title('truth');
 imshowscale(r_truth);
@@ -38,5 +39,8 @@ imshowscale(r_under);
 figure; title('reconstructed');
 imshowscale(r_recon);
 
-r_diff = abs(r_recon - r_truth);
+figure; title('reconstructed / new');
+imshowscale(r_recon2);
+
+r_diff = abs(r_recon2 - r_truth);
 figure; imshowscale(r_diff);

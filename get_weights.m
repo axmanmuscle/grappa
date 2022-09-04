@@ -1,6 +1,6 @@
 function W = get_weights(acr, kernel)
 % get_weights
-% as a design decision, we will take in the ace and a *single*
+% as a design decision, we will take in the acr and a *single*
 % kernel
 
 % if we have a 5x5 ACR and a 3x3 kernel, we will *only* shift like:

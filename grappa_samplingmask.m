@@ -17,8 +17,8 @@ acr_dx = (acr_x - 1)/2;
 cy = (ny - mod(ny, 2))/2;
 cx = (nx - mod(nx, 2))/2;
 
-mask = ones(data_sz);
-mask(:,2:reduction:end-1, :) = 0;
+mask = zeros(data_sz);
+mask(:,2:reduction:end-1, :) = 1;
 %mask(2:reduction:end-1,:, :) = 0;
 
 mask(cy-acr_dy:cy+acr_dy, cx-acr_dx:cx+acr_dx, :) = 1;
