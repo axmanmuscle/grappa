@@ -1,20 +1,47 @@
-function k_out = grappa(k_in, kernel_sz, acr_sz, reduction)
-%grappa implementation of grappa
-%   Detailed explanation goes here
+function [k_out, weights] = grappa(k_in, kernel_sz, acr_sz)
+%grappa an implementation of GRAPPA
+% Generalized Autocalibrating Partially Parallel Acquisitions (GRAPPA) is a
+% parallel imaging reconstruction algorithm for magnetic resonance
+% imaging. It reconstructs missing samples as a linear combination of
+% nearby points in k-space from *all available coils* by using an
+% autocalibration region (ACR), at the center of the image, to solve for
+% the interpolation weights given an interpolation kernel size.
+%
+% Author: Alex McManus
+% *********************
+%   Input Parameters:
+% *********************
+%
+%    k_in:  A 3D (size ny x nx x ncoils) array of measured k-space. The
+%    assumption in GRAPPA is that there is a fully sampled region in the
+%    center of the image. The center point convention is as follows:
+%
+%    if our array is odd size, we choose the center point
+%           o o o x o o o
+%    if our array is even size, we choose length / 2 + 1
+%           o o o x o o 
+%
+%    kernel_sz: a 2 element vector containing the dimensions of the kernel.
+%    We use MATLAB dimensions, so it's [row column]
+%    For example, a 3x1 kernel will fit inside a 5x5 ACR as:
+%                 x o o o o
+%                 x o o o o
+%                 x o o o o
+%                 o o o o o 
+%                 o o o o o 
+%    acr_sz: A 2 element vector containing the dimensions of the ACR. ACR
+%    must be odd sized in both directions.
+%
+% *********************
+%   Output Variables:
+% *********************
+%
+%    k_out: A 3D (size ny x nx x ncoils) array of k-space values with the
+%    reconstructed values filled in.
+%     
+%    weights: **DEBUG** a set of interpolation weights
+%
 
-flipped = false;
-ny = size(k_in, 1);
-nx = size(k_in, 2);
-ncoils = size(k_in, 3);
-
-if length(find(sum(k_in(:, :, 1), 1))) < ny
-  flipped = true;
-  for c =1:ncoils
-    k_in(:, :, c) = k_in(:, :, c).';
-  end
-end
-ny = size(k_in, 1);
-nx = size(k_in, 2);
 
 % kernel dimensions
 kernel_dy = kernel_sz(1);
@@ -23,10 +50,6 @@ kernel_dx = kernel_sz(2);
 % auto-calibration region dimensions
 acr_dy = acr_sz(1);
 acr_dx = acr_sz(2);
-
-% number of sliding kernel fits in the ACR
-numfits_x = acr_dx - kernel_dx + 1;
-numfits_y = acr_dy - kernel_dy + 1;
 
 % size checking
 if mod(kernel_dx, 2) ~= 1 || mod(kernel_dy, 2) ~= 1
@@ -45,13 +68,11 @@ if kernel_dy > acr_dy
   error('Kernel is larger than ACR in ky-dimension');
 end
 
-acr_dx = (acr_dx - 1)/2;
-acr_dy = (acr_dy - 1)/2;
+%acr_dx = (acr_dx - 1)/2;
+%acr_dy = (acr_dy - 1)/2;
 
-acr_xidx = [nx/2 - acr_dx : nx/2 + acr_dx];
-acr_yidx = [ny/2 - acr_dy : ny/2 + acr_dy];
-
-acr = k_in(ny/2 - acr_dy : ny/2 + acr_dy, nx/2 - acr_dx : nx/2 + acr_dx, :); % assumes the image has even dimensions
+%acr = k_in(ny/2 - acr_dy : ny/2 + acr_dy, nx/2 - acr_dx : nx/2 + acr_dx, :); % assumes the image has even dimensions
+acr = get_acr(k_in, acr_sz);
 
 if sum(acr == 0, 'all') > 0
   error('Auto-Calibration Region not fully sampled.');
@@ -71,51 +92,31 @@ end
 % W = [ ncoils x (ncoils * kernel_dx * kernel_dy) ]
 % S = [(ncoils * kernel_dx * kernel_dy) x (numfits_x * numfits_y)]
 
-S = zeros([ncoils*(kernel_dx - 1)*kernel_dy numfits_x*numfits_y]);
-X = zeros([ncoils numfits_x*numfits_y]);
-s_idx = 1;
-for kx = 1:numfits_x
-  for ky = 1:numfits_y
-    xtmp = acr(ky+1, kx+1, :);
-    X(:, s_idx) = reshape(xtmp, [8 1]);
-    stmp = acr([ky ky+kernel_dy-1], kx:kx+kernel_dx-1, :);
-    si = reshape(stmp, [], 1);
-    S(:, s_idx) = si;
-    s_idx = s_idx + 1;
-  end
-end
-
-% solve for weights
-W = X * pinv(S);
-
-% compare / test
-ki = logical([1 1 1; 0 0 0; 1 1 1]);
-Wi = get_weights(acr, ki);
-
-% apply to each missing point
+k1 = squeeze(k_in(: ,:, 1));
+[kers, karray] = get_kernels(k1, kernel_sz);
 k_out = k_in;
 
-row_idxs = find(sum(k_out(:, :, 1) == 0, 2) > 0);
+weights = 0;
+disp(length(kers))
+for i = 1:length(kers)
+%for i = 2
+  ki = kers(i);
+  ka = bin_to_array(ki, kernel_sz);
+  Wi = get_weights(acr, ka);
 
-for yi = 1:length(row_idxs)
-  y = row_idxs(yi);
-  containsy = any(acr_yidx == y);
-  for x = 2:nx-1
-    containsx = any(acr_xidx == x);
-    if containsy && containsx
-      continue
-    end
-    stmp = k_out([y-1 y+1], x-1:x+1, :);
-    si = reshape(stmp, [], 1);
-    xnew = W * si;
-    k_out(y, x, :) = xnew;
+  if i == 1
+    weights = Wi;
   end
+
+  karray_temp = (karray == ki);
+  oi = fill_points(k_in, karray_temp, ka, Wi);
+%   for coil = 1:ncoils
+%     wii = Wi(:, coil);
+%     oi = fill_points_onecoil(k_in, karray_temp, ka, wii, coil);
+%     k_out(:, :, coil) = k_out(:, :, coil) + oi;
+%   end
+  k_out = k_out + oi;
 end
 
-if flipped
-  for c = 1:ncoils
-    k_out(:, :, c) = k_out(:, :, c).';
-  end
-end
 
 end

@@ -9,7 +9,7 @@ for i = 1:n
   ci = cols(i);
   pts = get_points([ri ci], array, kernel);
 
-  fillpt = weights * pts;
+  fillpt = weights.' * squeeze(pts);
   out(ri, ci, :) = fillpt;
 end
 
