@@ -47,7 +47,7 @@ center_x = ceil((nx+1)/2);
 ypts = center_y - acr_dy : center_y + acr_dy;
 xpts = center_x - acr_dx : center_x + acr_dx;
 
-acr = k_in(ypts, xpts, :); % assumes the image has even dimensions
+acr = k_in(ypts, xpts, :); 
 
 if sum(acr == 0, 'all') > 0
   error('Auto-Calibration Region not fully sampled.');

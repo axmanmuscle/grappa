@@ -1,7 +1,5 @@
 function [out_struct, karray, kers] = get_kernel_struct(array, kernel_sz)
 
-% write the inverse function of bin -> arrays
-
 kers = [];
 karray = zeros(size(array));
 
@@ -63,43 +61,8 @@ for yi = 1:numel(yrows)
       karray(y, x) = n+1;
     end
 
-%     b = to_dig(k1);
-%     %k2 = to_array(b, kernel_sz);
-%     %karray(y, x) = b;
-% 
-%     if isempty(find(kers == b))
-%       kers = [kers; b];
-%       %b;
-%       %k2;
-%     end
-
   end
 end
+
 out_struct = struct('ker', kcell);
-end
-
-function out = to_dig(array)
-  array = reshape(array, 1, []);
-  out = bin2dec(num2str(array));
-end
-
-function out = to_array(dig, sz)
-  if numel(sz) > 2
-    error('too many elements in sz');
-  end
-  bin = dec2bin(dig);
-  n = sz(1) * sz(2);
-  n1 = n - numel(bin);
-
-  if n1 < 0
-    error("doesn't fit");
-  end
-
-  tz = repelem('0', n1);
-  b1 = strcat(tz, bin);
-  out = zeros(sz);
-
-  for i = 1:n
-    out(i) = str2num(b1(i));
-  end
 end

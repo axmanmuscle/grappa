@@ -18,16 +18,15 @@ d = d(:, :, 4, :);
 
 %% Test Grappa
 d1 = squeeze(d);
-%d1 = rot90(d1, -1);
-kernel_sz = [7 7];
-acr_sz = [319 11];
+kernel_sz = [5 5];
+acr_sz = [31 31];
 reduction = 2;
 
-sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'horiz');
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'both');
 
 d1 = bsxfun( @times, d1, sm );
 
-[out_2, grappa_weights] = grappa(d1, kernel_sz, acr_sz);
+out = grappa(d1, kernel_sz, acr_sz);
 % to do:
 % add in extra reduction sizes DONE
 % change size of kernel (?) DONE
@@ -35,8 +34,11 @@ d1 = bsxfun( @times, d1, sm );
 % set up extra systems to deal with edge points (how do we index)
 % documentation !!
 
-r1 = mri_reconSSQ(out_2);
+r1 = mri_reconSSQ(out);
 figure; imshowscale(r1);
+
+r2 = mri_reconSSQ(squeeze(d));
+figure; imshowscale(r2);
 
 %% rotation/ACR testing
 d1 = squeeze(d);
@@ -101,3 +103,69 @@ figure; imshowscale(r2);
 
 r3 = mri_reconSSQ(d1);
 figure; imshowscale(r3);
+
+%%  weights testing
+d1 = squeeze(d);
+%k1 = [1 1 1; 1 0 1; 1 1 1];
+%k1 = [1;0;1];
+k1 = [1 0 1];
+
+acr_sz = [15 15];
+reduction = 2;
+
+acr = get_acr(d1, acr_sz);
+weights = get_weights(acr, k1);
+
+%% axial slicing
+dFFT = readOldMriDataOrgData('../mridata/P14/kspace');
+
+d = ifft( ifftshift( dFFT, 1 ), [], 1 );
+d = d(40, :, :, :);
+d1 = squeeze(d);
+
+kernel_sz = [5 5];
+acr_sz = [319 31];
+reduction = 2;
+
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'both');
+
+d1 = bsxfun( @times, d1, sm );
+
+out = grappa(d1, kernel_sz, acr_sz);
+
+r1 = mri_reconSSQ(out);
+figure; imshowscale(r1);
+
+r2 = mri_reconSSQ(squeeze(d));
+figure; imshowscale(r2);
+
+figure; imshowscale(abs(r1 -r2));
+
+norm(abs(r1 - r2)) / norm(r2)
+
+%% whatever the other slicing is called
+dFFT = readOldMriDataOrgData('../mridata/P14/kspace');
+
+d = ifft( ifftshift( dFFT, 2 ), [], 2 );
+d = d(:, 40, :, :);
+d1 = squeeze(d);
+
+kernel_sz = [5 5];
+acr_sz = [31 31];
+reduction = 2;
+
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'both');
+
+d1 = bsxfun( @times, d1, sm );
+
+out = grappa(d1, kernel_sz, acr_sz);
+
+r1 = mri_reconSSQ(out);
+figure; imshowscale(r1);
+
+r2 = mri_reconSSQ(squeeze(d));
+figure; imshowscale(r2);
+
+figure; imshowscale(abs(r1 -r2));
+
+norm(abs(r1 - r2)) / norm(r2)

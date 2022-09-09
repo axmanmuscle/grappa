@@ -1,4 +1,4 @@
-function [k_out, weights] = grappa(k_in, kernel_sz, acr_sz)
+function k_out = grappa(k_in, kernel_sz, acr_sz)
 %grappa an implementation of GRAPPA
 % Generalized Autocalibrating Partially Parallel Acquisitions (GRAPPA) is a
 % parallel imaging reconstruction algorithm for magnetic resonance
@@ -38,9 +38,7 @@ function [k_out, weights] = grappa(k_in, kernel_sz, acr_sz)
 %
 %    k_out: A 3D (size ny x nx x ncoils) array of k-space values with the
 %    reconstructed values filled in.
-%     
-%    weights: **DEBUG** a set of interpolation weights
-%
+
 
 
 % kernel dimensions
@@ -68,10 +66,6 @@ if kernel_dy > acr_dy
   error('Kernel is larger than ACR in ky-dimension');
 end
 
-%acr_dx = (acr_dx - 1)/2;
-%acr_dy = (acr_dy - 1)/2;
-
-%acr = k_in(ny/2 - acr_dy : ny/2 + acr_dy, nx/2 - acr_dx : nx/2 + acr_dx, :); % assumes the image has even dimensions
 acr = get_acr(k_in, acr_sz);
 
 if sum(acr == 0, 'all') > 0
@@ -93,28 +87,15 @@ end
 % S = [(ncoils * kernel_dx * kernel_dy) x (numfits_x * numfits_y)]
 
 k1 = squeeze(k_in(: ,:, 1));
-[kers, karray] = get_kernels(k1, kernel_sz);
+[kernels, karray] = get_kernel_struct(k1, kernel_sz);
 k_out = k_in;
 
-weights = 0;
-disp(length(kers))
-for i = 1:length(kers)
-%for i = 2
-  ki = kers(i);
-  ka = bin_to_array(ki, kernel_sz);
+for i = 1:numel(kernels)
+  ka = kernels(i).ker;
   Wi = get_weights(acr, ka);
 
-  if i == 1
-    weights = Wi;
-  end
-
-  karray_temp = (karray == ki);
+  karray_temp = (karray == i);
   oi = fill_points(k_in, karray_temp, ka, Wi);
-%   for coil = 1:ncoils
-%     wii = Wi(:, coil);
-%     oi = fill_points_onecoil(k_in, karray_temp, ka, wii, coil);
-%     k_out(:, :, coil) = k_out(:, :, coil) + oi;
-%   end
   k_out = k_out + oi;
 end
 
