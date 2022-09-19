@@ -22,6 +22,13 @@ function acr = get_acr(k_in, acr_sz)
 %
 %    acr_sz: A 2 element vector containing the dimensions of the ACR. ACR
 %    must be odd sized in both directions.
+%
+% *********************
+%   Output Variables:
+% *********************
+%
+%    acr: A 3D (size ky x kx x ncoils) array of k-space values for the
+%    auto-calibration region.
 
 ny = size(k_in, 1);
 nx = size(k_in, 2);

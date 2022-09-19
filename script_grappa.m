@@ -1,11 +1,3 @@
-%%
-%TO DO
-
-% change binary system in kernels
-% find axial slice and show undersampling in both directions
-% clean up code
-% good documentation
-
 % now change things around for the new get_kernels
 %% load data
 dFFT = readOldMriDataOrgData('../mridata/P14/kspace');
@@ -22,17 +14,11 @@ kernel_sz = [5 5];
 acr_sz = [31 31];
 reduction = 2;
 
-sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'both');
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'horiz');
 
 d1 = bsxfun( @times, d1, sm );
 
 out = grappa(d1, kernel_sz, acr_sz);
-% to do:
-% add in extra reduction sizes DONE
-% change size of kernel (?) DONE
-% make sure ACR size works for mask and grappa DONE (???)
-% set up extra systems to deal with edge points (how do we index)
-% documentation !!
 
 r1 = mri_reconSSQ(out);
 figure; imshowscale(r1);

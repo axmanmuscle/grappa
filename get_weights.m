@@ -1,16 +1,44 @@
 function [W, A, B] = get_weights(acr, kernel)
-% get_weights
-% as a design decision, we will take in the acr and a *single*
-% kernel
-
-% if we have a 5x5 ACR and a 3x3 kernel, we will *only* shift like:
-% x x x o o    o x x x o 
-% x x x o o    o x x x o
-% x x x o o -> o x x x o
-% o o o o o    o o o o o 
-% o o o o o    o o o o o
-% so at a higher level, just break the ACR down to the specific 3x3xcoils
-% array and then apply the kernel to that
+%get_weights solve for weights for given kernel
+% This function solves for the prediction weights for a given kernel.
+% we'll solve B = A * W for W, where B is the collection of points of the
+% ACR, A are the corresponding points of the kernel, and W are the weights
+%
+% B = [ (numfits_x * numfits_y) x ncoils ]
+% W = [ (ncoils * npoints) x ncoils ]
+% A = [ (numfits_x * numfits_y) x (ncoils * npoints) ]
+%
+% Author: Alex McManus
+% *********************
+%   Input Parameters:
+% *********************
+%
+%    acr:  A 3D (size ny x nx x ncoils) array of fully sampled
+%    auto-calibration data.
+%
+%    kernel: a 2D array describing the current kernel. This is typically
+%    output from get_kernels.
+%
+%    For example, a 3x1 kernel will fit inside a 5x5 ACR as:
+%                 x o o o o
+%                 x o o o o
+%                 x o o o o
+%                 o o o o o 
+%                 o o o o o 
+%
+% *********************
+%   Output Variables:
+% *********************
+%
+%    W: a 2D array of dimensions [ (ncoils * npoints) ncoils ] containing
+%    the weights. The weights for coil i are W(:, i).
+%    
+%    (OPTIONAL) A: a 2D array of dimensions [ (numfits_x * numfits_y) x ncoils ] 
+%    containing the points used for each placement of the kernel within the
+%    ACR. Used for testing.
+%     
+%    (OPTIONAL) B: a 2D array of dimensions [ (numfits_x * numfits_y) (ncoils * npoints) ] 
+%    containing each of the center points for the kernel. Used for testing.
 
 % auto-calibration region dimensions
 acr_dy = size(acr, 1);
@@ -55,24 +83,6 @@ for coilIndx = 1 : ncoils
 
   w = A \ B;
   W(:, coilIndx) = w;
-end
-
-alex = false;
-if alex == true
-  A = zeros([numfits_x*numfits_y ncoils*npoints]);
-  B = zeros([numfits_x*numfits_y ncoils]);
-  b_idx = 1;
-  for kx = 1:numfits_x
-    for ky = 1:numfits_y
-      btmp = acr(ky+center_y, kx+center_x, :);
-      B(b_idx, :) = reshape(btmp, [ncoils 1]);
-      ai = get_points([ky+center_y kx+center_x], acr, kernel);
-      A(b_idx, :) = ai;
-      b_idx = b_idx + 1;
-    end
-  end
-
-  W2 = A \ B;
 end
 
 end

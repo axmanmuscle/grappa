@@ -1,4 +1,6 @@
-function [out_struct, karray, kers] = get_kernel_struct(array, kernel_sz)
+function [kers, karray] = get_kernels_OLD(array, kernel_sz)
+
+% write the inverse function of bin -> arrays
 
 kers = [];
 karray = zeros(size(array));
@@ -8,7 +10,6 @@ xcols = find(sum(array == 0, 1));
 
 ker_y = kernel_sz(1);
 ker_x = kernel_sz(2);
-kcell = {};
 
 if mod(ker_y, 2) ~= 1 || mod(ker_x, 2) ~= 1
   error('Kernel dimensions must be odd');
@@ -44,25 +45,44 @@ for yi = 1:numel(yrows)
 
       end
     end
-    
-    n = numel(kcell);
-    found = false;
-    for cellidx = 1:n
-      %ctmp = ;
-      if kcell{cellidx} == k1
-        found = true;
-        karray(y, x) = cellidx;
-        break;
-      end
-    end
 
-    if ~found
-      kcell(n+1) = {k1};
-      karray(y, x) = n+1;
+    b = to_dig(k1);
+    %k2 = to_array(b, kernel_sz);
+    karray(y, x) = b;
+
+    if isempty(find(kers == b))
+      kers = [kers; b];
+      %b;
+      %k2;
     end
 
   end
 end
 
-out_struct = struct('ker', kcell);
+end
+
+function out = to_dig(array)
+  array = reshape(array, 1, []);
+  out = bin2dec(num2str(array));
+end
+
+function out = to_array(dig, sz)
+  if numel(sz) > 2
+    error('too many elements in sz');
+  end
+  bin = dec2bin(dig);
+  n = sz(1) * sz(2);
+  n1 = n - numel(bin);
+
+  if n1 < 0
+    error("doesn't fit");
+  end
+
+  tz = repelem('0', n1);
+  b1 = strcat(tz, bin);
+  out = zeros(sz);
+
+  for i = 1:n
+    out(i) = str2num(b1(i));
+  end
 end

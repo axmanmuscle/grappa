@@ -66,28 +66,17 @@ if kernel_dy > acr_dy
   error('Kernel is larger than ACR in ky-dimension');
 end
 
+% get auto-calibration region
 acr = get_acr(k_in, acr_sz);
 
-if sum(acr == 0, 'all') > 0
-  error('Auto-Calibration Region not fully sampled.');
-end
-
-% between the reduction factor, the ACR size and the kernel size, we need
-% to figure out how to fill out the matrix we'll use to solve for our
+% for a given size of kernel, we'll have edge cases depending on the
+% sampling pattern
+% for each of these edge cases, we'll have to solve for a different set of
 % weights
-
-% there will be issues here - how do we handle edge cases, e.g.
-% now use the kernel to slide over the ACR
-
-% we'll solve X = W * S for W, where X is the collection of points of the
-% ACR, S are the corresponding points of the kernel, and W are the weights
-
-% X = [ ncoils x (numfits_x * numfits_y) ]
-% W = [ ncoils x (ncoils * kernel_dx * kernel_dy) ]
-% S = [(ncoils * kernel_dx * kernel_dy) x (numfits_x * numfits_y)]
-
+% we assume the undersampling pattern is the same for each coil, so use the
+% first coil 
 k1 = squeeze(k_in(: ,:, 1));
-[kernels, karray] = get_kernel_struct(k1, kernel_sz);
+[kernels, karray] = get_kernels(k1, kernel_sz);
 k_out = k_in;
 
 for i = 1:numel(kernels)
