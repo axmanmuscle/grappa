@@ -45,16 +45,16 @@ karray = zeros(size(array));
 yrows = find(sum(array == 0, 2));
 xcols = find(sum(array == 0, 1));
 
-ker_y = kernel_sz(1);
-ker_x = kernel_sz(2);
+sKerY = kernel_sz(1);
+sKerX = kernel_sz(2);
 kcell = {};
 
-if mod(ker_y, 2) ~= 1 || mod(ker_x, 2) ~= 1
+if mod(sKerY, 2) ~= 1 || mod(sKerX, 2) ~= 1
   error('Kernel dimensions must be odd');
 end
 
-ker_dy = (ker_y - 1) / 2;
-ker_dx = (ker_x - 1) / 2;
+ker_dy = (sKerY - 1) / 2;
+ker_dx = (sKerX - 1) / 2;
 
 for yi = 1:numel(yrows)
   y = yrows(yi);
@@ -63,7 +63,7 @@ for yi = 1:numel(yrows)
     if array(y, x) ~= 0
       continue
     end
-    k1 = zeros([ker_y, ker_x]);
+    k1 = zeros([sKerY, sKerX]);
     for ky = -ker_dy:ker_dy
       if y + ky < 1 || y + ky > size(array, 1)
         continue

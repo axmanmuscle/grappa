@@ -14,7 +14,7 @@ kernel_sz = [5 5];
 acr_sz = [31 31];
 reduction = 2;
 
-sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'horiz');
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'both');
 
 d1 = bsxfun( @times, d1, sm );
 
@@ -25,6 +25,18 @@ figure; imshowscale(r1);
 
 r2 = mri_reconSSQ(squeeze(d));
 figure; imshowscale(r2);
+
+%% test FFT
+d1 = squeeze(d);
+kernel_sz = [3 3];
+acr_sz = [31 31];
+reduction = 2;
+
+sm = grappa_samplingmask(size(d1), acr_sz, reduction, 'horiz');
+
+d1 = bsxfun( @times, d1, sm );
+
+out = grappa_fft(d1, kernel_sz, acr_sz);
 
 %% rotation/ACR testing
 d1 = squeeze(d);
